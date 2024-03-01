@@ -1,0 +1,24 @@
+# Python byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python venvs
+.env
+.venv
+env/
+venv/
+ENV/
+
+# User-specific stuff:
+.idea/
+*.iws
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+
+# archives
+*.zip
