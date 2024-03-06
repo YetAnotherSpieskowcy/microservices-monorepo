@@ -1,0 +1,108 @@
+query GetRatesQuery($skip: Int!, $take: Int!, $order: OrderType!, $userId: String, $rateParams: RateParams!, $exclusionRateParams: RateParams) {
+  rates(
+    skip: $skip
+    take: $take
+    order: $order
+    userId: $userId
+    rateParams: $rateParams
+    exclusionRateParams: $exclusionRateParams
+  ) {
+    list {
+      ...RateFragment
+    }
+    ratesCount
+  }
+}
+
+fragment RateFragment on Rate {
+  id
+  isBestseller
+  isPromoted
+  isConfirmed
+  supplierObjectId
+  rateType
+  promotions {
+    value
+    title
+  }
+  price
+  priceCatalogCode
+  baseCatalogPrice
+  omnibusFirstAdultPrice
+  participants {
+    price
+    baseCatalogPrice
+    type
+    additionalPayments {
+      type
+      amount
+    }
+  }
+  duration {
+    days
+  }
+  segments {
+    isExternal
+    ...AccommodationSegmentFragment
+    ...TransportSegmentFragment
+  }
+}
+
+fragment AccommodationSegmentFragment on AccommodationSegment {
+  type
+  beginDate
+  endDate
+  meal {
+    id
+    title
+  }
+  content {
+    title
+    assets
+    hotelRating
+    categories {
+      id
+      title
+    }
+    photos {
+      gallery
+    }
+    reviews {
+      customersRating
+      positiveReviewsPercentage
+      reviewsNumber
+    }
+    destinations {
+      country {
+        id
+        title
+        photos {
+          gallery
+        }
+      }
+      province {
+        id
+        title
+        photos {
+          gallery
+        }
+      }
+    }
+    geolocation {
+      lat
+      lng
+    }
+    newContent {
+      assets
+    }
+  }
+}
+
+fragment TransportSegmentFragment on TransportSegment {
+  type
+  beginDateTime
+  endDateTime
+  departure {
+    title
+  }
+}

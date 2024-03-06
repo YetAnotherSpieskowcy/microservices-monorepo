@@ -1,0 +1,11 @@
+query GetDestinations($rateParams: RateParams!) {
+  properties(rateParams: $rateParams) {
+    destinationRegions {
+      value
+      title
+      available
+      parent
+      type
+    }
+  }
+}

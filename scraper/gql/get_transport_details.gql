@@ -1,0 +1,53 @@
+query GetTransportDetailsQuery($id: String!, $adultsNumber: Int!, $childrenBirthDates: [ISODate!], $currency: Currency!, $language: Language!) {
+  rate(
+    id: $id
+    adultsNumber: $adultsNumber
+    childrenBirthDates: $childrenBirthDates
+    currency: $currency
+    language: $language
+  ) {
+    segments {
+      type
+      ... on DetailedTransportSegment {
+        beginDateTime
+        endDateTime
+        departure {
+          id
+        }
+        destination {
+          id
+        }
+        transportDetails {
+          from {
+            code
+            city
+            date
+          }
+          to {
+            code
+            city
+            date
+          }
+          via {
+            code
+            city
+            arrivalDate
+            departureDate
+            carrierName
+          }
+          baggageWeight {
+            hand
+            registered
+          }
+          carrierName
+          carrierCode
+          carrierFlightNumber
+        }
+      }
+      ... on DetailedAccommodationSegment {
+        beginDate
+        endDate
+      }
+    }
+  }
+}
