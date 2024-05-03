@@ -1,0 +1,73 @@
+query GetProductContentQuery(
+  $supplierObjectId: String!
+  $supplier: Supplier!
+  $language: Language!
+) {
+  content(language: $language, supplier: $supplier, supplierObjectId: $supplierObjectId) {
+    photos {
+      userPhotos {
+        panorama
+      }
+    }
+    categories {
+      id
+    }
+    newContent {
+      supplierObjectId
+      objectType
+      title
+      weatherId
+      movieUrl
+      initialDescription
+      assets
+      photos {
+        descriptionSectionId
+        url
+        title
+        altTitle
+        metadata {
+          blurhash
+          height
+          width
+        }
+      }
+      geolocation {
+        lat
+        lng
+      }
+      destination {
+        country {
+          id
+          title
+        }
+        province {
+          id
+          title
+        }
+        city {
+          id
+          title
+        }
+      }
+      descriptions {
+        id
+        title
+        subtitle
+        sections {
+          ids
+          title
+          header
+          isMultiColumn
+          extraInfo
+          lists {
+            header
+            items
+          }
+        }
+      }
+      hotelStandard {
+        internal
+      }
+    }
+  }
+}

@@ -20,6 +20,12 @@ python -m pip install -r requirements.txt
 
 ## Usage
 
+To both scrape and parse the scraped data, run:
 ```
-python scrape.py <output_file>
+python scrape.py results/
+```
+
+To skip scraping, run:
+```
+python scrape.py --skip-scraping results/
 ```
