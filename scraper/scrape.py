@@ -185,6 +185,7 @@ class DataSet:
 
     def _parse_transport_details(
         self,
+        product_content: dict[str, Any],
         transport_details: dict[str, Any] | None,
         routes: dict[str, Route],
         route_points: dict[str, RoutePoint],
@@ -199,6 +200,10 @@ class DataSet:
             code=transport_details["to"]["code"],
             city=transport_details["to"]["city"],
         )
+        if origin.code == origin.city:
+            origin.city = product_content["destination"]["country"]["title"]
+        if destination.code == destination.city:
+            destination.city = product_content["destination"]["country"]["title"]
         via = tuple(
             RoutePoint(code=point["code"], city=point["city"])
             for point in transport_details["via"]
@@ -333,19 +338,21 @@ class DataSet:
             copied_rate = pickle.loads(pickle.dumps(rate))
             self.rates[rate["id"]] = copied_rate
             detailed_segments = raw_transport_details.get(rate["id"])
-            product_content = raw_all_product_content.get(rate["id"])
+            product_content = raw_all_product_content[rate["id"]]
             copied_rate["detailedSegments"] = detailed_segments
             copied_rate["productContent"] = product_content
 
             for segment in detailed_segments or []:
                 if segment["type"] == "flight":
                     self._parse_transport_details(
+                        product_content,
                         segment["transportDetails"],
                         self.flight_routes,
                         self.airports,
                     )
                 elif segment["type"] == "bus":
                     self._parse_transport_details(
+                        product_content,
                         segment["transportDetails"],
                         self.bus_routes,
                         self.bus_stops,
