@@ -373,8 +373,6 @@ class DataSet:
 
             self._parse_rooms(hotel, product_content)
 
-        self._cleanup_incomplete_hotels()
-
 
 class Scraper:
     def __init__(self, output_dir: str, *, skip_scraping: bool = False) -> None:

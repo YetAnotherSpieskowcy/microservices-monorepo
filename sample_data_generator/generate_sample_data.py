@@ -318,14 +318,22 @@ class App:
                             "extra_bed_count": 1,
                         }
                     )
-                if len(data["meals"]) == 1:
+                elif len(data["rooms"]) == 0:
+                    # a lot of hotels only have a single room type
+                    # and we don't want for it to be hard to find a hotel
+                    # with room options
+                    data["rooms"] = [
+                        {"title": "deluxe", "bed_count": 2, "extra_bed_count": 1},
+                        {"title": "standardowy", "bed_count": 2, "extra_bed_count": 1},
+                    ]
+                if len(data["meals"]) < 2:
                     # the vast majority of hotels only have a single meal type
                     # and we don't want for it to be hard to find a hotel
                     # with meal options
                     meals = self._data["meals"].copy()
                     del meals[hotel["meals"][0]["identifier"]]
                     population = list(meals.values())
-                    k = rand.randint(1, 2)
+                    k = rand.randint(1, 2) + (1 - len(data["meals"]))
                     for meal in rand.sample(population, k):
                         data["meals"].append(
                             self._meal_ids[meal["identifier"]].entity_id
