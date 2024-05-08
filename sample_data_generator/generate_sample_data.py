@@ -40,6 +40,7 @@ ENTITY_TYPE_COUNTRY = "Country"
 ENTITY_TYPE_CITY = "City"
 ENTITY_TYPE_MEAL = "Meal"
 ENTITY_TYPE_HOTEL = "Hotel"
+ENTITY_TYPE_TOUR = "Tour"
 
 
 class SnapshotIds(NamedTuple):
@@ -153,6 +154,8 @@ class App:
         self._generate_country_city_queries()
         self._generate_meal_queries()
         self._generate_hotel_queries()
+
+        self._generate_tour_queries()
 
     @contextlib.contextmanager
     def _open(self, name: str) -> Iterator[tuple[TextIO, TextIO]]:
@@ -347,6 +350,56 @@ class App:
                         data=data,
                     ),
                 )
+
+    def _generate_tour_queries(self) -> None:
+        # a.k.a. general product descriptions
+        rand = random.Random(420)
+        tours = []
+        for rate in self._data["rates"].values():
+            hotel_ids = next(
+                (
+                    self._hotel_ids.get(segment["content"]["title"])
+                    for segment in rate["segments"]
+                    if segment["type"] == "hotel"
+                ),
+                None,
+            )
+            if hotel_ids is None:
+                # it's a trip without specific hotels attached, let's just select
+                # a random hotel matching the country
+                country_id = rate["productContent"]["destination"]["country"]["id"]
+                population = [
+                    self._hotel_ids[hotel["title"]]
+                    for hotel in self._data["hotels"].values()
+                    if hotel["destination_country_id"] == country_id
+                ]
+                try:
+                    hotel_ids = rand.choice(population)
+                except IndexError:
+                    # just give up...
+                    continue
+            tour = {
+                "duration": rate["duration"]["days"],
+                "title": rate["productContent"]["title"],
+                "description": rate["productContent"]["initialDescription"],
+                "photos": [photo["url"] for photo in rate["productContent"]["photos"]],
+                "geolocation": rate["productContent"]["geolocation"],
+                "hotel": hotel_ids.entity_id,
+            }
+            tours.append(tour)
+
+        with self._open("tours") as (sql_fp, mongo_fp):
+            for tour in tours:
+                tour_ids = _mongo_insert(
+                    mongo_fp,
+                    self._sql_insert(
+                        sql_fp,
+                        entity_type=ENTITY_TYPE_TOUR,
+                        event_name="TourCreated",
+                        data=tour,
+                    )
+                )
+                self._tour_ids[tour_ids.entity_id] = tour_ids
 
 
 def main() -> None:
