@@ -6,6 +6,7 @@ import argparse
 import contextlib
 import json
 import logging
+import random
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, NamedTuple, TextIO
@@ -287,6 +288,7 @@ class App:
                 )
 
     def _generate_hotel_queries(self) -> None:
+        rand = random.Random(420)
         with self._open("hotels") as (sql_fp, mongo_fp):
             for hotel in self._data["hotels"].values():
                 data = {
@@ -303,6 +305,31 @@ class App:
                         and self._city_ids[hotel["destination_city_id"]]
                     ),
                 }
+                if len(data["rooms"]) == 1:
+                    # a lot of hotels only have a single room type
+                    # and we don't want for it to be hard to find a hotel
+                    # with room options
+                    data["rooms"].append(
+                        {"title": "deluxe", "bed_count": 2, "extra_bed_count": 1}
+                        if data["rooms"][0]["title"] == "standardowy"
+                        else {
+                            "title": "standardowy",
+                            "bed_count": 2,
+                            "extra_bed_count": 1,
+                        }
+                    )
+                if len(data["meals"]) == 1:
+                    # the vast majority of hotels only have a single meal type
+                    # and we don't want for it to be hard to find a hotel
+                    # with meal options
+                    meals = self._data["meals"].copy()
+                    del meals[hotel["meals"][0]["identifier"]]
+                    population = list(meals.values())
+                    k = rand.randint(1, 2)
+                    for meal in rand.sample(population, k):
+                        data["meals"].append(
+                            self._meal_ids[meal["identifier"]].entity_id
+                        )
                 self._hotel_ids[hotel["title"]] = _mongo_insert(
                     mongo_fp,
                     self._sql_insert(
