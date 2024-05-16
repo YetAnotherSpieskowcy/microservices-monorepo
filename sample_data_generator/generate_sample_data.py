@@ -7,10 +7,10 @@ import contextlib
 import json
 import logging
 import random
+import uuid
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, NamedTuple, TextIO
-from uuid import uuid4
 
 from psycopg import sql
 
@@ -75,6 +75,7 @@ def _mongo_insert(fp: TextIO, snapshot: Snapshot) -> SnapshotIds:
 class App:
     def __init__(self) -> None:
         self._args = self._parse_args()
+        self._uuid_rand = random.Random(44)
         self._last_id = 0
         self.__i = 50
         self._airport_ids: dict[str, SnapshotIds] = {}
@@ -120,6 +121,9 @@ class App:
     def _reset_i(self) -> None:
         self.__i = 50
 
+    def _uuid4(self) -> str:
+        return str(uuid.UUID(int=self._uuid_rand.getrandbits(128), version=4))
+
     def _sql_insert(
         self,
         fp: TextIO,
@@ -128,7 +132,7 @@ class App:
         event_name: str,
         data: dict[str, Any],
     ) -> Snapshot:
-        id_ = str(uuid4())
+        id_ = self._uuid4()
         event_id = self.next_id()
         fp.write(
             SQL_QUERIES_INSERT_EVENT.format(
