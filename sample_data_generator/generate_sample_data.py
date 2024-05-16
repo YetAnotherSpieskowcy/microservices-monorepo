@@ -306,10 +306,10 @@ class App:
                     ],
                     "destination_country_id": self._country_ids[
                         hotel["destination_country_id"]
-                    ],
+                    ].entity_id,
                     "destination_city_id": (
                         hotel["destination_city_id"]
-                        and self._city_ids[hotel["destination_city_id"]]
+                        and self._city_ids[hotel["destination_city_id"]].entity_id
                     ),
                 }
                 if len(data["rooms"]) == 1:
