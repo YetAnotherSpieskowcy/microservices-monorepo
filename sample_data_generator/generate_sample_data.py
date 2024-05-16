@@ -164,10 +164,11 @@ class App:
     @contextlib.contextmanager
     def _open(self, name: str) -> Iterator[tuple[TextIO, TextIO]]:
         header = f"Sample {name} data"
-        sql_fp = open(self._sql_dir / f"{self._i()}_{name}.sql", "w", encoding="utf-8")
+        i = self._i()
+        sql_fp = open(self._sql_dir / f"{i}_{name}.sql", "w", encoding="utf-8")
         try:
             sql_fp.write(f"-- {header}\n-- @generated")
-            mongo_fp = open(self._mongo_dir / f"{self._i()}_{name}.js", "w", encoding="utf-8")
+            mongo_fp = open(self._mongo_dir / f"{i}_{name}.js", "w", encoding="utf-8")
             try:
                 mongo_fp.write(f"// {header}\n// @generated")
                 yield (sql_fp, mongo_fp)
