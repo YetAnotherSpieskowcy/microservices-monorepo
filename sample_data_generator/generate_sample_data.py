@@ -170,7 +170,11 @@ class App:
             sql_fp.write(f"-- {header}\n-- @generated")
             mongo_fp = open(self._mongo_dir / f"{i}_{name}.js", "w", encoding="utf-8")
             try:
-                mongo_fp.write(f"// {header}\n// @generated")
+                mongo_fp.write(
+                    f"// {header}\n"
+                    "// @generated\n"
+                    'db = db.getSiblingDB("rsww_184529");\n'
+                )
                 yield (sql_fp, mongo_fp)
             finally:
                 mongo_fp.close()
