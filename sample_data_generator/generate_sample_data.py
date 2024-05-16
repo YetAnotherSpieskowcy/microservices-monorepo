@@ -68,7 +68,7 @@ def _mongo_insert(fp: TextIO, snapshot: Snapshot) -> SnapshotIds:
         "last_event_id": snapshot.ids.last_event_id,
         "data": snapshot.data,
     }
-    fp.write(MONGO_QUERIES_INSERT_SNAPSHOT.format(document=json.dumps(document)))
+    fp.write(MONGO_QUERIES_INSERT_SNAPSHOT.format(document=json.dumps(document, indent=2)))
     return snapshot.ids
 
 
