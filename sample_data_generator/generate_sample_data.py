@@ -219,7 +219,7 @@ class App:
                 ):
                     reservation_limit = rand.randint(200, 400)
                     reservation_count = rand.randint(
-                        reservation_limit - 6, reservation_limit - 1
+                        reservation_limit - 12, reservation_limit - 1
                     )
                     snapshot = _mongo_insert(
                         mongo_fp,
@@ -271,7 +271,7 @@ class App:
                 ):
                     reservation_limit = rand.randint(20, 40)
                     reservation_count = rand.randint(
-                        reservation_limit - 6, reservation_limit - 1
+                        reservation_limit - 12, reservation_limit - 1
                     )
                     snapshot = _mongo_insert(
                         mongo_fp,
@@ -349,7 +349,7 @@ class App:
             for hotel in self._data["hotels"].values():
                 reservation_limit = rand2.randint(20, 100)
                 reservation_count = rand2.randint(
-                    reservation_limit - 6, reservation_limit - 1
+                    reservation_limit - 5, reservation_limit - 1
                 )
                 minimum_age = rand2.choice(AGE_CHOICES)
                 data = {
