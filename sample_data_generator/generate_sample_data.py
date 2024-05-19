@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import datetime
+import itertools
 import json
 import logging
 import random
@@ -94,6 +95,7 @@ class App:
         self._meal_ids: dict[str, SnapshotIds] = {}
         self._room_ids: dict[str, SnapshotIds] = {}
         self._hotel_ids: dict[str, SnapshotIds] = {}
+        self._hotels: dict[SnapshotIds, dict[str, Any]] = {}
         self._tour_ids: dict[str, SnapshotIds] = {}
         with open(self._args.input_file, encoding="utf-8") as fp:
             self._data = json.load(fp)
@@ -350,17 +352,52 @@ class App:
                         self._meal_ids[meal["identifier"]].entity_id
                         for meal in hotel["meals"]
                     ],
+                    "meal_titles": [meal["title"] for meal in hotel["meals"]],
                     "destination_country_id": self._country_ids[
                         hotel["destination_country_id"]
                     ].entity_id,
+                    "destination_country_title": self._data["countries"][
+                        hotel["destination_country_id"]
+                    ]["title"],
                     "destination_city_id": (
                         hotel["destination_city_id"]
                         and self._city_ids[hotel["destination_city_id"]].entity_id
                     ),
+                    "destination_city_title": self._data["countries"][
+                        hotel["destination_country_id"]
+                    ]["cities"].get(hotel["destination_city_id"], {}).get(""),
+                    "from": [
+                        self._data["bus_routes"]
+                    ],
                     "reservation_count": reservation_count,
                     "reservation_limit": reservation_limit,
                     "minimum_age": minimum_age,
                 }
+                bus_routes = [
+                    route
+                    for route in self._data["bus_routes"].values()
+                    if (
+                        route["destination"]["code"] == data["destination_stop_code"]
+                        or route["destination"]["city"] == data["destination_city_title"]
+                        or route["destination"]["city"] == data["destination_country_title"]
+                    )
+                ]
+                flight_routes = [
+                    route
+                    for route in self._data["flight_routes"].values()
+                    if (
+                        route["destination"]["code"] == data["destination_stop_code"]
+                        or route["destination"]["city"] == data["destination_city_title"]
+                        or route["destination"]["city"] == data["destination_country_title"]
+                    )
+                ]
+                data["bus_routes"] = bus_routes
+                data["flight_routes"] = flight_routes
+                data["from"] = [
+                    route["origin"]["city"] for route in itertools.chain(
+                        bus_routes, flight_routes
+                    )
+                ]
                 if len(data["rooms"]) == 1:
                     # a lot of hotels only have a single room type
                     # and we don't want for it to be hard to find a hotel
@@ -398,7 +435,7 @@ class App:
                         data["meals"].append(
                             self._meal_ids[meal["identifier"]].entity_id
                         )
-                self._hotel_ids[hotel["title"]] = _mongo_insert(
+                hotel_ids = self._hotel_ids[hotel["title"]] = _mongo_insert(
                     mongo_fp,
                     self._sql_insert(
                         sql_fp,
@@ -407,6 +444,7 @@ class App:
                         data=data,
                     ),
                 )
+                self._hotels[hotel_ids] = data
 
     def _generate_tour_queries(self) -> None:
         # a.k.a. general product descriptions
@@ -440,6 +478,7 @@ class App:
             duration = rate["duration"]["days"]
             start_date = fake.date_between(EARLIEST_DATE, LATEST_DATE)
             end_date = start_date + datetime.timedelta(days=duration)
+            hotel = self._hotels[hotel_ids]
             tour = {
                 "duration": duration,
                 "title": rate["productContent"]["title"],
@@ -447,6 +486,15 @@ class App:
                 "photos": [photo["url"] for photo in rate["productContent"]["photos"]],
                 "geolocation": rate["productContent"]["geolocation"],
                 "hotel": hotel_ids.entity_id,
+                "hotel_meals": hotel["meals"],
+                "hotel_meal_titles": hotel["meal_titles"],
+                "hotel_destination_city_id": hotel["destination_city_id"],
+                "hotel_destination_city_title": hotel["destination_city_title"],
+                "hotel_destination_country_id": hotel["destination_country_id"],
+                "hotel_destination_country_title": hotel["destination_country_title"],
+                "hotel_from": hotel["from"],
+                "hotel_bus_routes": hotel["bus_routes"],
+                "hotel_flight_routes": hotel["flight_routes"],
                 "start_date": start_date.isoformat(),
                 "end_date": end_date.isoformat(),
             }

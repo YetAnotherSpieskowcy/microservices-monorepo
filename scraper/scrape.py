@@ -114,6 +114,8 @@ class Hotel:
     destination_country_id: str
     #: Destination city that the offer should be for if the hotel is offered
     destination_city_id: str | None
+    #: Destination stop code for either a bus stop or airport
+    destination_stop_code: str
     #: Latitude
     latitude: float
     #: Longitude
@@ -189,9 +191,9 @@ class DataSet:
         transport_details: dict[str, Any] | None,
         routes: dict[str, Route],
         route_points: dict[str, RoutePoint],
-    ) -> None:
+    ) -> str | None:
         if transport_details is None:
-            return
+            return None
         origin = RoutePoint(
             code=transport_details["from"]["code"],
             city=transport_details["from"]["city"],
@@ -214,8 +216,11 @@ class DataSet:
         route_points[destination.code] = destination
         for point in via:
             route_points[point.code] = point
+        return destination.code
 
-    def _parse_hotel(self, segment: dict[str, Any]) -> Hotel | None:
+    def _parse_hotel(
+        self, segment: dict[str, Any], destination_stop_code: str | None
+    ) -> Hotel | None:
         content = segment["content"]
         title = content["title"]
         hotel_rating = content["hotelRating"]
@@ -226,6 +231,8 @@ class DataSet:
         geolocation = content["geolocation"]
         if geolocation is None:
             # skip the odd ones
+            return None
+        if destination_stop_code is None:
             return None
         latitude = geolocation["lat"]
         longitude = geolocation["lng"]
@@ -238,6 +245,7 @@ class DataSet:
                 destination_city_id=destination_city_id,
                 latitude=latitude,
                 longitude=longitude,
+                destination_stop_code=destination_stop_code,
             ),
         )
         meal = Meal(
@@ -342,26 +350,29 @@ class DataSet:
             copied_rate["detailedSegments"] = detailed_segments
             copied_rate["productContent"] = product_content
 
+            destination_stop_code = None
             for segment in detailed_segments or []:
                 if segment["type"] == "flight":
-                    self._parse_transport_details(
+                    destination_code = self._parse_transport_details(
                         product_content,
                         segment["transportDetails"],
                         self.flight_routes,
                         self.airports,
                     )
+                    destination_stop_code = destination_stop_code or destination_code
                 elif segment["type"] == "bus":
-                    self._parse_transport_details(
+                    destination_code = self._parse_transport_details(
                         product_content,
                         segment["transportDetails"],
                         self.bus_routes,
                         self.bus_stops,
                     )
+                    destination_stop_code = destination_stop_code or destination_code
 
             hotel = None
             for segment in rate["segments"] or []:
                 if segment["type"] == "hotel":
-                    hotel = self._parse_hotel(segment)
+                    hotel = self._parse_hotel(segment, destination_stop_code)
                     if hotel is not None:
                         break
 
