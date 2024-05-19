@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, NamedTuple, TextIO
 
 from faker import Faker
+from dateutil.rrule import rrule, DAILY
 from psycopg import sql
 
 
@@ -47,6 +48,8 @@ ENTITY_TYPE_TOUR = "Tour"
 AGE_CHOICES = (0, 3, 10, 18)
 EARLIEST_DATE = datetime.date(2024, 5, 21)
 LATEST_DATE = EARLIEST_DATE + datetime.timedelta(days=60)
+# account for returning flight happening after trip start date
+LATEST_ROUTE_DATE = LATEST_DATE + datetime.timedelta(days=17)
 
 
 class SnapshotIds(NamedTuple):
@@ -202,34 +205,40 @@ class App:
 
     def _generate_flight_route_queries(self) -> None:
         rand = random.Random(420)
+        fake = Faker()
+        fake.seed_instance(420)
         with self._open("flight_routes") as (sql_fp, mongo_fp):
             for flight_route in self._data["flight_routes"].values():
-                reservation_limit = rand.randint(200, 400)
-                reservation_count = rand.randint(
-                    reservation_limit - 6, reservation_limit - 1
-                )
-                _mongo_insert(
-                    mongo_fp,
-                    self._sql_insert(
-                        sql_fp,
-                        entity_type=ENTITY_TYPE_FLIGHT_ROUTE,
-                        event_name="FlightRouteCreated",
-                        data={
-                            "origin_airport_id": self._airport_ids[
-                                flight_route["origin"]["code"]
-                            ].entity_id,
-                            "via_airport_ids": [
-                                self._airport_ids[airport["code"]].entity_id
-                                for airport in flight_route["via"]
-                            ],
-                            "destination_airport_id": self._airport_ids[
-                                flight_route["destination"]["code"]
-                            ].entity_id,
-                            "reservation_count": reservation_count,
-                            "reservation_limit": reservation_limit,
-                        },
-                    ),
-                )
+                for dt in rrule(
+                    DAILY, dtstart=EARLIEST_DATE, until=LATEST_ROUTE_DATE
+                ):
+                    reservation_limit = rand.randint(200, 400)
+                    reservation_count = rand.randint(
+                        reservation_limit - 6, reservation_limit - 1
+                    )
+                    _mongo_insert(
+                        mongo_fp,
+                        self._sql_insert(
+                            sql_fp,
+                            entity_type=ENTITY_TYPE_FLIGHT_ROUTE,
+                            event_name="FlightRouteCreated",
+                            data={
+                                "origin_airport_id": self._airport_ids[
+                                    flight_route["origin"]["code"]
+                                ].entity_id,
+                                "via_airport_ids": [
+                                    self._airport_ids[airport["code"]].entity_id
+                                    for airport in flight_route["via"]
+                                ],
+                                "destination_airport_id": self._airport_ids[
+                                    flight_route["destination"]["code"]
+                                ].entity_id,
+                                "reservation_count": reservation_count,
+                                "reservation_limit": reservation_limit,
+                                "date": dt.date().isoformat(),
+                            },
+                        ),
+                    )
 
     def _generate_bus_stop_queries(self) -> None:
         with self._open("bus_stops") as (sql_fp, mongo_fp):
@@ -246,34 +255,40 @@ class App:
 
     def _generate_bus_route_queries(self) -> None:
         rand = random.Random(420)
+        fake = Faker()
+        fake.seed_instance(420)
         with self._open("bus_routes") as (sql_fp, mongo_fp):
             for bus_route in self._data["bus_routes"].values():
-                reservation_limit = rand.randint(20, 40)
-                reservation_count = rand.randint(
-                    reservation_limit - 6, reservation_limit - 1
-                )
-                _mongo_insert(
-                    mongo_fp,
-                    self._sql_insert(
-                        sql_fp,
-                        entity_type=ENTITY_TYPE_BUS_ROUTE,
-                        event_name="BusRouteCreated",
-                        data={
-                            "origin_bus_stop_id": self._bus_stop_ids[
-                                bus_route["origin"]["code"]
-                            ].entity_id,
-                            "via_bus_stop_ids": [
-                                self._bus_stop_ids[stop["code"]].entity_id
-                                for stop in bus_route["via"]
-                            ],
-                            "destination_bus_stop_id": self._bus_stop_ids[
-                                bus_route["destination"]["code"]
-                            ].entity_id,
-                            "reservation_count": reservation_count,
-                            "reservation_limit": reservation_limit,
-                        },
+                for dt in rrule(
+                    DAILY, dtstart=EARLIEST_DATE, until=LATEST_ROUTE_DATE
+                ):
+                    reservation_limit = rand.randint(20, 40)
+                    reservation_count = rand.randint(
+                        reservation_limit - 6, reservation_limit - 1
                     )
-                )
+                    _mongo_insert(
+                        mongo_fp,
+                        self._sql_insert(
+                            sql_fp,
+                            entity_type=ENTITY_TYPE_BUS_ROUTE,
+                            event_name="BusRouteCreated",
+                            data={
+                                "origin_bus_stop_id": self._bus_stop_ids[
+                                    bus_route["origin"]["code"]
+                                ].entity_id,
+                                "via_bus_stop_ids": [
+                                    self._bus_stop_ids[stop["code"]].entity_id
+                                    for stop in bus_route["via"]
+                                ],
+                                "destination_bus_stop_id": self._bus_stop_ids[
+                                    bus_route["destination"]["code"]
+                                ].entity_id,
+                                "reservation_count": reservation_count,
+                                "reservation_limit": reservation_limit,
+                                "date": dt.date().isoformat(),
+                            },
+                        )
+                    )
 
     def _generate_country_city_queries(self) -> None:
         with self._open("countries_and_cities") as (sql_fp, mongo_fp):
