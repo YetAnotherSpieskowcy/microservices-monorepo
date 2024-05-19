@@ -495,6 +495,8 @@ class App:
                 "hotel_from": hotel["from"],
                 "hotel_bus_routes": hotel["bus_routes"],
                 "hotel_flight_routes": hotel["flight_routes"],
+                "hotel_max_people_per_reservation": hotel["max_people_per_reservation"],
+                "hotel_minimum_age": hotel["minimum_age"],
                 "start_date": start_date.isoformat(),
                 "end_date": end_date.isoformat(),
             }
