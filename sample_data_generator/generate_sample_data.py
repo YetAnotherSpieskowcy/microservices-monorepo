@@ -89,7 +89,9 @@ class App:
         self._last_id = 0
         self.__i = 50
         self._airport_ids: dict[str, SnapshotIds] = {}
+        self._flight_routes: dict[str, dict[str, str]] = {}
         self._bus_stop_ids: dict[str, SnapshotIds] = {}
+        self._bus_routes: dict[str, dict[str, str]] = {}
         self._country_ids: dict[str, SnapshotIds] = {}
         self._city_ids: dict[str, SnapshotIds] = {}
         self._meal_ids: dict[str, SnapshotIds] = {}
@@ -210,7 +212,8 @@ class App:
         fake = Faker()
         fake.seed_instance(420)
         with self._open("flight_routes") as (sql_fp, mongo_fp):
-            for flight_route in self._data["flight_routes"].values():
+            for key, flight_route in self._data["flight_routes"].items():
+                route_dates = self._flight_routes[key] = {}
                 for dt in rrule(
                     DAILY, dtstart=EARLIEST_DATE, until=LATEST_ROUTE_DATE
                 ):
@@ -218,7 +221,7 @@ class App:
                     reservation_count = rand.randint(
                         reservation_limit - 6, reservation_limit - 1
                     )
-                    _mongo_insert(
+                    snapshot = _mongo_insert(
                         mongo_fp,
                         self._sql_insert(
                             sql_fp,
@@ -241,6 +244,7 @@ class App:
                             },
                         ),
                     )
+                    route_dates[dt.date().isoformat()] = snapshot.entity_id
 
     def _generate_bus_stop_queries(self) -> None:
         with self._open("bus_stops") as (sql_fp, mongo_fp):
@@ -260,7 +264,8 @@ class App:
         fake = Faker()
         fake.seed_instance(420)
         with self._open("bus_routes") as (sql_fp, mongo_fp):
-            for bus_route in self._data["bus_routes"].values():
+            for key, bus_route in self._data["bus_routes"].items():
+                route_dates = self._bus_routes[key] = {}
                 for dt in rrule(
                     DAILY, dtstart=EARLIEST_DATE, until=LATEST_ROUTE_DATE
                 ):
@@ -268,7 +273,7 @@ class App:
                     reservation_count = rand.randint(
                         reservation_limit - 6, reservation_limit - 1
                     )
-                    _mongo_insert(
+                    snapshot = _mongo_insert(
                         mongo_fp,
                         self._sql_insert(
                             sql_fp,
@@ -291,6 +296,7 @@ class App:
                             },
                         )
                     )
+                    route_dates[dt.date().isoformat()] = snapshot.entity_id
 
     def _generate_country_city_queries(self) -> None:
         with self._open("countries_and_cities") as (sql_fp, mongo_fp):
@@ -374,8 +380,8 @@ class App:
                     "minimum_age": minimum_age,
                 }
                 bus_routes = [
-                    route
-                    for route in self._data["bus_routes"].values()
+                    {"key": key, **route}
+                    for key, route in self._data["bus_routes"].items()
                     if (
                         route["destination"]["code"] == data["destination_stop_code"]
                         or route["destination"]["city"] == data["destination_city_title"]
@@ -383,8 +389,8 @@ class App:
                     )
                 ]
                 flight_routes = [
-                    route
-                    for route in self._data["flight_routes"].values()
+                    {"key": key, **route}
+                    for key, route in self._data["flight_routes"].items()
                     if (
                         route["destination"]["code"] == data["destination_stop_code"]
                         or route["destination"]["city"] == data["destination_city_title"]
@@ -493,8 +499,20 @@ class App:
                 "hotel_destination_country_id": hotel["destination_country_id"],
                 "hotel_destination_country_title": hotel["destination_country_title"],
                 "hotel_from": hotel["from"],
-                "hotel_bus_routes": hotel["bus_routes"],
-                "hotel_flight_routes": hotel["flight_routes"],
+                "hotel_bus_routes": [
+                    {
+                        "id": self._bus_routes[route["key"]][start_date.isoformat()],
+                        **route,
+                    }
+                    for route in hotel["bus_routes"]
+                ],
+                "hotel_flight_routes": [
+                    {
+                        "id": self._flight_routes[route["key"]][start_date.isoformat()],
+                        **route,
+                    }
+                    for route in hotel["flight_routes"]
+                ],
                 "hotel_max_people_per_reservation": hotel["max_people_per_reservation"],
                 "hotel_minimum_age": hotel["minimum_age"],
                 "start_date": start_date.isoformat(),
