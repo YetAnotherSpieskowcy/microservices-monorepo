@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import datetime
 import json
 import logging
 import random
@@ -12,6 +13,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, NamedTuple, TextIO
 
+from faker import Faker
 from psycopg import sql
 
 
@@ -41,6 +43,10 @@ ENTITY_TYPE_CITY = "City"
 ENTITY_TYPE_MEAL = "Meal"
 ENTITY_TYPE_HOTEL = "Hotel"
 ENTITY_TYPE_TOUR = "Tour"
+
+AGE_CHOICES = (0, 3, 10, 18)
+EARLIEST_DATE = datetime.date(2024, 5, 21)
+LATEST_DATE = EARLIEST_DATE + datetime.timedelta(days=60)
 
 
 class SnapshotIds(NamedTuple):
@@ -195,8 +201,13 @@ class App:
                 )
 
     def _generate_flight_route_queries(self) -> None:
+        rand = random.Random(420)
         with self._open("flight_routes") as (sql_fp, mongo_fp):
             for flight_route in self._data["flight_routes"].values():
+                reservation_limit = rand.randint(200, 400)
+                reservation_count = rand.randint(
+                    reservation_limit - 6, reservation_limit - 1
+                )
                 _mongo_insert(
                     mongo_fp,
                     self._sql_insert(
@@ -214,6 +225,8 @@ class App:
                             "destination_airport_id": self._airport_ids[
                                 flight_route["destination"]["code"]
                             ].entity_id,
+                            "reservation_count": reservation_count,
+                            "reservation_limit": reservation_limit,
                         },
                     ),
                 )
@@ -232,8 +245,13 @@ class App:
                 )
 
     def _generate_bus_route_queries(self) -> None:
+        rand = random.Random(420)
         with self._open("bus_routes") as (sql_fp, mongo_fp):
             for bus_route in self._data["bus_routes"].values():
+                reservation_limit = rand.randint(20, 40)
+                reservation_count = rand.randint(
+                    reservation_limit - 6, reservation_limit - 1
+                )
                 _mongo_insert(
                     mongo_fp,
                     self._sql_insert(
@@ -251,6 +269,8 @@ class App:
                             "destination_bus_stop_id": self._bus_stop_ids[
                                 bus_route["destination"]["code"]
                             ].entity_id,
+                            "reservation_count": reservation_count,
+                            "reservation_limit": reservation_limit,
                         },
                     )
                 )
@@ -301,8 +321,14 @@ class App:
 
     def _generate_hotel_queries(self) -> None:
         rand = random.Random(420)
+        rand2 = random.Random(421)
         with self._open("hotels") as (sql_fp, mongo_fp):
             for hotel in self._data["hotels"].values():
+                reservation_limit = rand2.randint(20, 100)
+                reservation_count = rand2.randint(
+                    reservation_limit - 6, reservation_limit - 1
+                )
+                minimum_age = rand2.choice(AGE_CHOICES)
                 data = {
                     **hotel,
                     "meals": [
@@ -316,6 +342,9 @@ class App:
                         hotel["destination_city_id"]
                         and self._city_ids[hotel["destination_city_id"]].entity_id
                     ),
+                    "reservation_count": reservation_count,
+                    "reservation_limit": reservation_limit,
+                    "minimum_age": minimum_age,
                 }
                 if len(data["rooms"]) == 1:
                     # a lot of hotels only have a single room type
@@ -338,6 +367,10 @@ class App:
                         {"title": "deluxe", "bed_count": 2, "extra_bed_count": 1},
                         {"title": "standardowy", "bed_count": 2, "extra_bed_count": 1},
                     ]
+                data["max_people_per_reservation"] = max(
+                    room["bed_count"] + room["extra_bed_count"]
+                    for room in data["rooms"]
+                )
                 if len(data["meals"]) < 2:
                     # the vast majority of hotels only have a single meal type
                     # and we don't want for it to be hard to find a hotel
@@ -363,6 +396,8 @@ class App:
     def _generate_tour_queries(self) -> None:
         # a.k.a. general product descriptions
         rand = random.Random(420)
+        fake = Faker()
+        fake.seed_instance(421)
         tours = []
         for rate in self._data["rates"].values():
             hotel_ids = next(
@@ -387,13 +422,18 @@ class App:
                 except IndexError:
                     # just give up...
                     continue
+            duration = rate["duration"]["days"]
+            start_date = fake.date_between(EARLIEST_DATE, LATEST_DATE)
+            end_date = start_date + datetime.timedelta(days=duration)
             tour = {
-                "duration": rate["duration"]["days"],
+                "duration": duration,
                 "title": rate["productContent"]["title"],
                 "description": rate["productContent"]["initialDescription"],
                 "photos": [photo["url"] for photo in rate["productContent"]["photos"]],
                 "geolocation": rate["productContent"]["geolocation"],
                 "hotel": hotel_ids.entity_id,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
             }
             tours.append(tour)
 
