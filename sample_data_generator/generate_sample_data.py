@@ -372,9 +372,6 @@ class App:
                     "destination_city_title": self._data["countries"][
                         hotel["destination_country_id"]
                     ]["cities"].get(hotel["destination_city_id"], {}).get(""),
-                    "from": [
-                        self._data["bus_routes"]
-                    ],
                     "reservation_count": reservation_count,
                     "reservation_limit": reservation_limit,
                     "minimum_age": minimum_age,
@@ -399,11 +396,13 @@ class App:
                 ]
                 data["bus_routes"] = bus_routes
                 data["flight_routes"] = flight_routes
-                data["from"] = [
-                    route["origin"]["city"] for route in itertools.chain(
-                        bus_routes, flight_routes
+                data["from"] = sorted(
+                    set(
+                        route["origin"]["city"] for route in itertools.chain(
+                            bus_routes, flight_routes
+                        )
                     )
-                ]
+                )
                 if len(data["rooms"]) == 1:
                     # a lot of hotels only have a single room type
                     # and we don't want for it to be hard to find a hotel
