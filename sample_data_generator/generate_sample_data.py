@@ -492,6 +492,8 @@ class App:
                 "photos": [photo["url"] for photo in rate["productContent"]["photos"]],
                 "geolocation": rate["productContent"]["geolocation"],
                 "hotel": hotel_ids.entity_id,
+                "hotel_rating": hotel["hotel_rating"],
+                "hotel_rooms": hotel["rooms"],
                 "hotel_meals": hotel["meals"],
                 "hotel_meal_titles": hotel["meal_titles"],
                 "hotel_destination_city_id": hotel["destination_city_id"],
@@ -515,6 +517,7 @@ class App:
                 ],
                 "hotel_max_people_per_reservation": hotel["max_people_per_reservation"],
                 "hotel_minimum_age": hotel["minimum_age"],
+                "hotel_reservation_limit": hotel["reservation_limit"],
                 "start_date": start_date.isoformat(),
                 "end_date": end_date.isoformat(),
             }
