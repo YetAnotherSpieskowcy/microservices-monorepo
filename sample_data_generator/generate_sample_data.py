@@ -371,7 +371,7 @@ class App:
                     ),
                     "destination_city_title": self._data["countries"][
                         hotel["destination_country_id"]
-                    ]["cities"].get(hotel["destination_city_id"], {}).get(""),
+                    ]["cities"].get(hotel["destination_city_id"], {}).get("title"),
                     "reservation_count": reservation_count,
                     "reservation_limit": reservation_limit,
                     "minimum_age": minimum_age,
