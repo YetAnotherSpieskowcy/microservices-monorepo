@@ -440,6 +440,7 @@ class App:
                         data["meals"].append(
                             self._meal_ids[meal["identifier"]].entity_id
                         )
+                        data["meal_titles"].append(meal["title"])
                 hotel_ids = self._hotel_ids[hotel["title"]] = _mongo_insert(
                     mongo_fp,
                     self._sql_insert(
