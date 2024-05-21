@@ -228,6 +228,7 @@ class App:
                             entity_type=ENTITY_TYPE_FLIGHT_ROUTE,
                             event_name="FlightRouteCreated",
                             data={
+                                "origin_airport_city": flight_route["origin"]["city"],
                                 "origin_airport_id": self._airport_ids[
                                     flight_route["origin"]["code"]
                                 ].entity_id,
@@ -235,6 +236,9 @@ class App:
                                     self._airport_ids[airport["code"]].entity_id
                                     for airport in flight_route["via"]
                                 ],
+                                "destination_airport_city": (
+                                    flight_route["destination"]["city"]
+                                ),
                                 "destination_airport_id": self._airport_ids[
                                     flight_route["destination"]["code"]
                                 ].entity_id,
@@ -280,6 +284,7 @@ class App:
                             entity_type=ENTITY_TYPE_BUS_ROUTE,
                             event_name="BusRouteCreated",
                             data={
+                                "origin_bus_stop_city": bus_route["origin"]["city"],
                                 "origin_bus_stop_id": self._bus_stop_ids[
                                     bus_route["origin"]["code"]
                                 ].entity_id,
@@ -287,6 +292,9 @@ class App:
                                     self._bus_stop_ids[stop["code"]].entity_id
                                     for stop in bus_route["via"]
                                 ],
+                                "destination_bus_stop_city": (
+                                    bus_route["destination"]["city"]
+                                ),
                                 "destination_bus_stop_id": self._bus_stop_ids[
                                     bus_route["destination"]["code"]
                                 ].entity_id,
