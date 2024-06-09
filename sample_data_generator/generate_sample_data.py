@@ -463,6 +463,7 @@ class App:
     def _generate_tour_queries(self) -> None:
         # a.k.a. general product descriptions
         rand = random.Random(420)
+        rand2 = random.Random(421)
         fake = Faker()
         fake.seed_instance(421)
         tours = []
@@ -493,8 +494,10 @@ class App:
             start_date = fake.date_between(EARLIEST_DATE, LATEST_DATE)
             end_date = start_date + datetime.timedelta(days=duration)
             hotel = self._hotels[hotel_ids]
+            multiplier = rand2.uniform(1.0, 5.0)
             tour = {
                 "duration": duration,
+                "multiplier": multiplier,
                 "title": rate["productContent"]["title"],
                 "description": rate["productContent"]["initialDescription"],
                 "photos": [photo["url"] for photo in rate["productContent"]["photos"]],
