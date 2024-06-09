@@ -47,7 +47,7 @@ ENTITY_TYPE_HOTEL = "Hotel"
 ENTITY_TYPE_TOUR = "Tour"
 
 AGE_CHOICES = (0, 3, 10, 18)
-EARLIEST_DATE = datetime.date(2024, 5, 21)
+EARLIEST_DATE = datetime.date(2024, 6, 11)
 LATEST_DATE = EARLIEST_DATE + datetime.timedelta(days=60)
 # account for returning flight happening after trip start date
 LATEST_ROUTE_DATE = LATEST_DATE + datetime.timedelta(days=17)
